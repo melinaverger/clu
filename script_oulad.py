@@ -7,13 +7,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
 
 
 # set the number of clusters to be studied
 # here, we could only have 2 as we have only 0-or-1-value result
 NB_CLUSTER = 2
 # set the number of principal components to lower dimensional space
-NB_COMPONENT = 5
+# max is the number of features
+NB_COMPONENT = 8
 
 
 ZIP_FILE_NAME = "anonymisedData.zip"
@@ -185,12 +188,17 @@ print(X_data.shape)
 print(y_data.shape)
 
 
+# scale the data (NECESSARY step)
+scaler = MinMaxScaler()
+data = scaler.fit_transform(data)
+
+
 # lower dimensional space 
 estimator = PCA(n_components=NB_COMPONENT)
 X_pca = estimator.fit_transform(X_data)
 
 
-# plot clusters (8 colors at most depending on NB_CLUSTER)
+# plot clusters (2 colors at most depending on NB_CLUSTER)
 colors = ["black", "blue", "orange", "yellow", "pink", "red", "lime", "cyan"]
 
 for i in range(len(colors)):
@@ -222,3 +230,33 @@ plt.xlabel("Première composante principale")
 plt.ylabel("Deuxième composante principale")
 
 plt.show()
+
+
+# === (start) see the optimal number of components ===
+# https://www.mikulskibartosz.name/pca-how-to-choose-the-number-of-components/
+
+pca = PCA(n_components=NB_COMPONENT).fit(data)
+
+fig, ax = plt.subplots()
+xi = np.arange(1, NB_COMPONENT+1, step=1)
+print("xi :", xi)
+print(xi.shape)
+y = np.cumsum(pca.explained_variance_ratio_)
+print("y :", y)
+print(y.shape)
+
+plt.ylim(0.0,1.1)
+plt.plot(xi, y, marker='o', linestyle='--', color='b')
+
+plt.xlabel('Number of Components')
+plt.xticks(np.arange(0, 11, step=1)) #change from 0-based array index to 1-based human-readable label
+plt.ylabel('Cumulative variance (%)')
+plt.title('The number of components needed to explain variance')
+
+plt.axhline(y=0.95, color='r', linestyle='-')
+plt.text(0.5, 0.85, '95% cut-off threshold', color = 'red', fontsize=16)
+
+ax.grid(axis='x')
+plt.show()
+
+# === (end) see the optimal number of components ===
