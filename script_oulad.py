@@ -201,7 +201,7 @@ X_pca = estimator.fit_transform(X_data)
 # plot clusters (2 colors at most depending on NB_CLUSTER)
 colors = ["black", "blue", "orange", "yellow", "pink", "red", "lime", "cyan"]
 
-for i in range(len(colors)):
+for i in range(NB_CLUSTER):
     px = X_pca[:, 0][y_data == i] # first component
     py = X_pca[:, 1][y_data == i] # second component
     plt.scatter(px, py, c=colors[i])
@@ -220,7 +220,7 @@ kmeans_pred = kmeans.predict(X_data)
 
 
 # therefore we plot the 2 first components like before but with the clusters learned by k-mean
-for i in range(len(colors)):
+for i in range(NB_CLUSTER):
     px = X_pca[:, 0][kmeans_pred == i]
     py = X_pca[:, 1][kmeans_pred == i]
     plt.scatter(px, py, c=colors[i])
