@@ -39,6 +39,12 @@ estimator = PCA(n_components=NB_COMPONENT)
 X_pca = estimator.fit_transform(X_train)
 # X_pca.shape: (~n_class*180, n_components)
 
+# when we set n_components=0.95 to have a ratio of variance of preserve at 0.95,
+# we need 28 PC to reach this 95%
+print(estimator.explained_variance_ratio_)
+print(len(estimator.explained_variance_ratio_))
+print("\n")
+
 
 
 # plot clusters (10 colors at most depending on NB_CLUSTER)

@@ -9,14 +9,15 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+from sklearn.linear_model import LogisticRegression
 
 
 # set the number of clusters to be studied
 # here, we could only have 2 as we have only 0-or-1-value result
-NB_CLUSTER = 2
+NB_CLUSTER = 7
 # set the number of principal components to lower dimensional space
 # max is the number of features
-NB_COMPONENT = 8
+NB_COMPONENT = 0.95
 
 
 ZIP_FILE_NAME = "anonymisedData.zip"
@@ -186,48 +187,64 @@ data = get_data()
 X_data, y_data = data.drop(columns=["final_result"]), data["final_result"]
 print(X_data.shape)
 print(y_data.shape)
+# split later
 
 
 # scale the data (NECESSARY step)
 scaler = MinMaxScaler()
-data = scaler.fit_transform(data)
+X_data_scaled = scaler.fit_transform(X_data)
 
 
-# lower dimensional space 
+# lower dimensional space
 estimator = PCA(n_components=NB_COMPONENT)
-X_pca = estimator.fit_transform(X_data)
-
+X_pca = estimator.fit_transform(X_data_scaled)
+print(X_pca.shape)
+print(estimator.explained_variance_ratio_)
+print(len(estimator.explained_variance_ratio_))
+print("\n")
 
 # plot clusters (2 colors at most depending on NB_CLUSTER)
-colors = ["black", "blue", "orange", "yellow", "pink", "red", "lime", "cyan"]
+colors = ["red", "blue", "orange", "yellow", "pink", "black", "lime", "cyan"]
 
 for i in range(NB_CLUSTER):
-    px = X_pca[:, 0][y_data == i] # first component
-    py = X_pca[:, 1][y_data == i] # second component
+    if X_pca.shape[1] == 1:
+        px = X_pca[:][y_data == i] # first component
+        py = [0 for i in px]
+        plt.xlabel("Première composante principale")
+    else:
+        px = X_pca[:, 0][y_data == i] # first component
+        py = X_pca[:, 1][y_data == i] # second component
+        plt.xlabel("Première composante principale")
+        plt.ylabel("Deuxième composante principale")
     plt.scatter(px, py, c=colors[i])
 
 plt.legend(('0', '1'))
-plt.xlabel("Première composante principale")
-plt.ylabel("Deuxième composante principale")
+plt.title("PCA")
 
 plt.show()
 
 
 # now we want to see the clusters found by k-mean algorithm
-kmeans = KMeans(n_clusters=NB_CLUSTER).fit(X_data)
-kmeans_pred = kmeans.predict(X_data)
+kmeans = KMeans(n_clusters=NB_CLUSTER).fit(X_data_scaled)
+kmeans_pred = kmeans.predict(X_data_scaled)
 # kmeans_pred.shape == y_digits.shape
 
 
 # therefore we plot the 2 first components like before but with the clusters learned by k-mean
 for i in range(NB_CLUSTER):
-    px = X_pca[:, 0][kmeans_pred == i]
-    py = X_pca[:, 1][kmeans_pred == i]
+    if X_pca.shape[1] == 1:
+        px = X_pca[:][kmeans_pred == i] # first component
+        py = [0 for i in px]
+        plt.xlabel("Première composante principale")
+    else:
+        px = X_pca[:, 0][kmeans_pred == i]
+        py = X_pca[:, 1][kmeans_pred == i]
+        plt.xlabel("Première composante principale")
+        plt.ylabel("Deuxième composante principale")
     plt.scatter(px, py, c=colors[i])
 
-plt.legend(('0', '1'))
-plt.xlabel("Première composante principale")
-plt.ylabel("Deuxième composante principale")
+plt.legend([k for k in range(NB_CLUSTER)])
+plt.title("k-means")
 
 plt.show()
 
@@ -235,10 +252,13 @@ plt.show()
 # === (start) see the optimal number of components ===
 # https://www.mikulskibartosz.name/pca-how-to-choose-the-number-of-components/
 
-pca = PCA(n_components=NB_COMPONENT).fit(data)
+NB_TOT_COMPONENT = 8
+
+pca = PCA(n_components=NB_TOT_COMPONENT)
+pca.fit(X_data_scaled)
 
 fig, ax = plt.subplots()
-xi = np.arange(1, NB_COMPONENT+1, step=1)
+xi = np.arange(1, NB_TOT_COMPONENT+1, step=1)
 print("xi :", xi)
 print(xi.shape)
 y = np.cumsum(pca.explained_variance_ratio_)
@@ -260,3 +280,37 @@ ax.grid(axis='x')
 plt.show()
 
 # === (end) see the optimal number of components ===
+
+
+
+# now, it could be interesting to perform a simple logistic regression and see
+# the coefficient related to each feature.
+
+# change the code bellow
+# lr = LogisticRegression(penalty="none", random_state=0)
+# lr.fit(X_train, y_train)
+# y_pred_train = lr.predict(X_train)
+# y_pred_test = lr.predict(X_test)
+#
+#
+# print("LR accuracy - train", metrics.accuracy_score(y_train, y_pred_train))
+# print("LR accuracy - test", metrics.accuracy_score(y_test, y_pred_test))
+#
+#
+# for i in range(NB_CLUSTER):
+#     px = X_pca[:, 0][y_pred_train == i] # first component
+#     py = X_pca[:, 1][y_pred_train == i] # second component
+#     plt.scatter(px, py, c=colors[i])
+#
+# plt.legend(digits.target_names[:NB_CLUSTER])
+# plt.xlabel("Première composante principale")
+# plt.ylabel("Deuxième composante principale")
+# #plt.title("[LR] Clustering avec X_train réduit en fonction de y_pred_train (clustering avec prédictions d'entraînement)")
+#
+# plt.show()
+#
+#
+# print("Rand index (ground trut vs. LR predictions) - train: ", metrics.rand_score(y_train, y_pred_train))
+# print("Rand index (ground trut vs. LR predictions) - test: ", metrics.rand_score(y_test, y_pred_test))
+#
+# print("\n")
